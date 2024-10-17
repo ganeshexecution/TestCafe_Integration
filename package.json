@@ -1,0 +1,26 @@
+{
+  "name": "testcafe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:chrome:3": "testcafe chrome --concurrency 3 --screenshots on fail --reporter html:report1.html ./tests2",
+    "test:complex1": "testcafe chrome .\\tests2\\ComplexScenario1_ArraySorting.js",
+    "test:complex2": "testcafe edge .\\tests2\\ComplexScenario2_MultipleScenariosOnSortingProducts.js",
+    "test:complex4": "testcafe edge .\\tests2\\ComplexScenario4_ValidatingExcelData.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "testcafe": "^3.6.2"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "axios": "^1.7.7",
+    "prettier": "^3.3.3",
+    "testcafe-reporter-html": "^1.4.6",
+    "utils": "^0.2.2",
+    "xlsx": "^0.18.5"
+  }
+}

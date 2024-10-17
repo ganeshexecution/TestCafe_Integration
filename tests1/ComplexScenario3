@@ -1,0 +1,219 @@
+import { Selector } from "testcafe";
+import xlsx from 'xlsx';
+ 
+ 
+const loadTestData = () => {
+    const workbook = xlsx.readFile('.//tests1//Book1.xlsx');
+    const sheetName = workbook.SheetNames[2];
+    if (!workbook.SheetNames.includes(sheetName)) {
+        throw new Error(`Sheet named "${sheetName}" not found in the Excel file.`);
+    }
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+    console.log('Data from Excel file in Json format:', data);
+ 
+    if (data.length === 0) {
+ 
+        console.log('No data found in the Excel file.');
+        return;
+    }
+    return data;
+ 
+};
+ 
+ 
+fixture("Multiple Scenarios on Adding Products to Cart")
+    .page("http://automationexercise.com")
+    .skipJsErrors()
+ 
+    .beforeEach(async b => {
+ 
+        //await b.maximizeWindow();
+ 
+        //First Page
+        //Sign up
+        const signUpButton = Selector('a').withText('Signup / Login')
+        await b.click(signUpButton)
+        await b.wait(3000)
+ 
+        //Second Page
+        //Email
+        const loginEmail = Selector('input').withAttribute('data-qa', 'login-email')
+        await b.typeText(loginEmail, 'johng0m0124410450@gmail.com')
+        await b.wait(1000)
+ 
+        //Password
+        const loginPassword = Selector('input').withAttribute('data-qa', 'login-password')
+        await b.typeText(loginPassword, 'abCde@12346')
+        await b.wait(1000)
+ 
+        //Login button
+        const loginButton = Selector('button').withAttribute('data-qa', 'login-button')
+        await b.click(loginButton)
+        console.log('Account logged in')
+ 
+    })
+ 
+    .afterEach(async b => {
+        await b.wait(2000)
+        const topCart = Selector('a').withText('Cart')
+        await b.click(topCart)
+        await b.wait(2000)
+ 
+        const parent = Selector('tr')
+        const child = parent.find('td').withAttribute('class', 'cart_delete')
+        const grandchild = child.find('.cart_quantity_delete')
+        const count = await grandchild.count;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+ 
+        for (let i = 0; i < count; i++)
+        {
+ 
+            await b.click(grandchild.nth(0))
+            console.log('Product ' + (i + 1) + ' is deleted')
+            await b.wait(2000)
+        }
+ 
+ 
+        console.log('Cart cleared')
+        await b.takeScreenshot(`screenshot${timestamp}.png`);
+        const logout = Selector('a').withText('Logout')
+        await b.click(logout)
+        console.log('Account logged out')
+ 
+ 
+ 
+    })
+ 
+test.only('Adding and removing single product into the cart', async b => {
+    const productsPrice = Selector('.features_items').find('h2').withText('Rs.');
+    const productsName = Selector('.features_items').find('p');
+    const productsPriceCount = await productsPrice.count;
+    const productsNameCount = await productsName.count;
+ 
+ 
+    let products = [];
+    for (let i = 0; i < productsPriceCount; i++) 
+    {
+        const priceText = await productsPrice.nth(i).innerText;
+        const productNameText = await productsName.nth(i + 2).innerText;
+        const price = priceText.split('.')
+        const final_price = price[1].trim()
+        products.push({ final_price, productsName: productNameText.trim() });
+ 
+    }
+ 
+    const uniqueProducts = Array.from(new Set(products.map(p => JSON.stringify(p))))
+        .map(p => JSON.parse(p));
+ 
+    const sortedProducts = uniqueProducts.sort((a, b) => Number(a.final_price) - Number(b.final_price));
+ 
+    const searchProductName = 'Full Sleeves Top Cherry - Pink';
+    for (let i = 0; i < sortedProducts.length; i++) 
+    {
+        if ((sortedProducts[i].productsName) === searchProductName) 
+        {
+            const productSelector = Selector('.productinfo').child('p').withText(sortedProducts[i].productsName);
+            const addToCartButton = productSelector.sibling('a.add-to-cart');
+ 
+            await b
+                .wait(2000)
+                .scrollIntoView(productSelector)
+                .wait(2000)
+                .click(addToCartButton)
+                .wait(3000)
+            const continueButton = Selector('button').withText('Continue Shopping');
+            await b.click(continueButton)
+            console.log('Added ' + searchProductName + ' to cart')
+ 
+        }
+    }
+    console.log('---------------------------');
+ 
+})
+ 
+test('Adding and removing multiple product into the cart', async b => {
+ 
+    const productsPrice = Selector('.features_items').find('h2').withText('Rs.');
+    const productsName = Selector('.features_items').find('p');
+    const productsPriceCount = await productsPrice.count;
+    const productsNameCount = await productsName.count;
+ 
+    let products = [];
+    for (let i = 0; i < productsPriceCount; i++)
+    {
+        const priceText = await productsPrice.nth(i).innerText;
+        const productNameText = await productsName.nth(i + 2).innerText;
+        const price = priceText.split('.')
+        const final_price = price[1].trim()
+        products.push({ final_price, productsName: productNameText.trim() });
+ 
+    }
+ 
+    const uniqueProducts = Array.from(new Set(products.map(p => JSON.stringify(p))))
+        .map(p => JSON.parse(p));
+ 
+    const sortedProducts = uniqueProducts.sort((a, b) => Number(a.final_price) - Number(b.final_price));
+ 
+ 
+ 
+    let firstTenProducts = [];
+    console.log("Sorted Products of first 10 products:");
+    for (let i = 0; i < 10; i++) {
+        const product = sortedProducts[i];
+        firstTenProducts.push(product);
+        console.log(`Product Name : ${product.productsName},  Price: ${product.final_price}`);
+    }
+    console.log('---------------------------------')
+ 
+    for (let j = 0; j < firstTenProducts.length; j++) {
+        const productSelector = Selector('.productinfo').child('p').withText(firstTenProducts[j].productsName);
+        const addToCartButton = productSelector.sibling('a.add-to-cart');
+ 
+        await b
+            .wait(2000)
+            .scrollIntoView(productSelector)
+            .click(addToCartButton)
+            .wait(3000)
+        console.log(firstTenProducts[j].productsName + ' is added to cart.')
+        const continueButton = Selector('button').withText('Continue Shopping');
+ 
+ 
+        await b.click(continueButton)
+    }
+ 
+ 
+})
+ 
+test('Getting products from excel and adding them to cart', async b => {
+ 
+    const testDataArray = loadTestData();
+ 
+    for (const [index, row] of testDataArray.entries()) {
+        const productSelector = Selector('.productinfo').child('p').withText(row.Products);
+        const addToCartButton = productSelector.sibling('a.add-to-cart');
+        const parent1 = Selector('.modal-footer');
+        const continueButton = parent1.child('button').withText('Continue Shopping');
+ 
+        const productExists = await productSelector.visible;
+        if (productExists) {
+ 
+            for (let i = 0; i < row.Quantity; i++) {
+                await b
+                    .click(addToCartButton)
+                    .wait(3000);
+ 
+                await b.click(continueButton)
+                    .wait(2000);
+            }
+ 
+            console.log(row.Products + ' is added to cart ' + row.Quantity + ' times');
+        }
+        else {
+            console.log(row.Products + ' is does not exists in the application')
+        }
+    }
+ 
+ 
+ 
+})
